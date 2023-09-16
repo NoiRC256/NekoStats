@@ -68,14 +68,21 @@ Stat stat2 = new Stat().SetObserveMode(StatObserveMode.EveryChange);
 </details>
 <details><summary><b>4. Reactive upper & lower bounds</b></summary>
 <br>
-Changes in the upper bound and lower bound will propagate to the stat and cause it to be marked dirty.
+Changes in a stat's upper bound and lower bound will propagate to the stat and cause it to be marked dirty.
 
 ```csharp
-Stat maxHealth = new Stat(500f);
-
 // currentHealth will be bounded between 0 and maxHealth.
-// If maxHealth becomes lower than currentHealth, currentHealth will be marked dirty and re-calculated on next access.
+Stat maxHealth = new Stat(500f);
 Stat currentHealth = new Stat(500f).SetLowerBound().SetUpperBound(maxHealth);
+
+Assert.AreEqual(maxHealth.Value, 500f);
+Assert.AreEqual(currentHealth.Value, 500f);
+
+// maxHealth has become lower than currentHealth.
+// currentHealth is be marked dirty and re-calculated on next access.
+maxHealth.Value = 450f;
+Assert.AreEqual(maxHealth.Value, 450f);
+Assert.AreEqual(currentHealth.Value, 450f);
 ```
 </details>
 
