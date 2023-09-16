@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace NekoLib.Stats
 {
-    public enum StatChangeMonitorMode
+    public enum StatObserveMode
     {
         EveryTick = 0,
         EveryChange = 1,
@@ -44,7 +44,7 @@ namespace NekoLib.Stats
 
         // Value change monitoring.
         [SerializeField] protected bool _enableBroadcast = true;
-        [SerializeField] protected StatChangeMonitorMode _changeMonitorMode = StatChangeMonitorMode.EveryTick;
+        [SerializeField] protected StatObserveMode _observeMode = StatObserveMode.EveryTick;
         [SerializeField] protected bool _isDirty = true;
         [SerializeField] protected bool _broadcastChangeThisTick = true;
 
@@ -314,7 +314,7 @@ namespace NekoLib.Stats
         /// </summary>
         public void Tick()
         {
-            if (_enableBroadcast && _changeMonitorMode == StatChangeMonitorMode.EveryTick)
+            if (_enableBroadcast && _observeMode == StatObserveMode.EveryTick)
             {
                 // If marked dirty for re-calculation, invoke value change events.
                 if (_broadcastChangeThisTick)
@@ -331,9 +331,9 @@ namespace NekoLib.Stats
             return this;
         }
 
-        public Stat SetChangeMonitorMode(StatChangeMonitorMode changeMonitorMode = StatChangeMonitorMode.EveryTick)
+        public Stat SetObserveMode(StatObserveMode changeMonitorMode = StatObserveMode.EveryTick)
         {
-            _changeMonitorMode = changeMonitorMode;
+            _observeMode = changeMonitorMode;
             return this;
         }
 
@@ -346,20 +346,20 @@ namespace NekoLib.Stats
 
         /// <summary>
         /// Set the stat as dirty.
-        /// <para>If <see cref="_changeMonitorMode"/> is <see cref="StatChangeMonitorMode.EveryTick"/>,
+        /// <para>If <see cref="_observeMode"/> is <see cref="StatObserveMode.EveryTick"/>,
         /// will broadcast value change next time <see cref="Tick"/> is executed.</para>
-        /// <para>If <see cref="_changeMonitorMode"/> is <see cref="StatChangeMonitorMode.EveryChange"/>,
+        /// <para>If <see cref="_observeMode"/> is <see cref="StatObserveMode.EveryChange"/>,
         /// will broadcast value change right away.</para>
         /// </summary>
         protected void SetDirty()
         {
             _isDirty = true;
-            switch (_changeMonitorMode)
+            switch (_observeMode)
             {
-                case StatChangeMonitorMode.EveryTick:
+                case StatObserveMode.EveryTick:
                     _broadcastChangeThisTick = true;
                     break;
-                case StatChangeMonitorMode.EveryChange:
+                case StatObserveMode.EveryChange:
                     OnValueChanged();
                     break;
             }
