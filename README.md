@@ -1,21 +1,22 @@
 # Overview
 NekoStats is a lightweight reactive stat system for Unity. It provides the building blocks for character stats, perks, buffs & debuffs, all that good stuff you might see in stats-heavy games such as rogue-likes and RPGs.
 
-**Key Features**
+## Key Features
+
+(Click to expand each section)
 
 </details>
-<details><summary><b>Lightweight observable stats</b></summary>
-Listen to ValueChanged to observe value;
-
-Listen to StatChanged to observe stat instance.
+<details><summary><b>1. Lightweight observable stats</b></summary>
+<br>
+Listen to ValueChanged event to observe value. Listen to StatChanged event to observe stat instance.
 
 ```csharp
 void OnEnable() {
-    Character.Health.StatChanged += HandleHealthChanged;
+    _character.Health.StatChanged += HandleHealthChanged;
 }
 
 void OnDisable() {
-    Character.Health.StatChanged -= HandleHealthChanged;
+    _character.Health.StatChanged -= HandleHealthChanged;
 }
 
 void HandleHealthChanged(Stat stat) {
@@ -25,28 +26,33 @@ void HandleHealthChanged(Stat stat) {
 </details>
 
 </details>
-<details><summary><b>Non-destructive value modification</b></summary>
+<details><summary><b>2. Non-destructive value modification</b></summary>
+<br>
+Each stat instance maintains its own collection of modifiers.
 
 ```csharp
 Stat speed = new Stat(10f);
 
 StatModifier speedMultiplyModifier = new StatModifier(0.5f, StatModifierEffect.Mult);
+StatModifier speedAddModifier = new StatModifier(2f, StatModifierEffect.Add);
 
+// Add multiplicative modifier.
 speed.AddModifier(speedMultiplyModifier);
 Assert.AreEqual(speed.Value, 15f);
 
-StatModifier speedAddModifier = new StatModifier(2f, StatModifierEffect.Add);
-
+// Add additive modifier.
 speed.AddModifier(speedAddModifier);
 Assert.AreEqual(speed.Value, 17f);
 
+// Remove multiplicative modifier.
 speed.RemoveModifier(speedMultiplyModifier);
 Assert.AreEqual(speed.Value, 12f);
 ```
 </details>
 
 </details>
-<details><summary><b>Optimized Lazy Calculation</b></summary>
+<details><summary><b>3. Optimized lazy calculation</b></summary>
+<br>
 If a stat is marked dirty, its final value will be re-calculated upon next access, then cached until marked dirty again.
 
 ```csharp
@@ -60,7 +66,8 @@ Stat stat2 = new Stat().SetObserveMode(StatObserveMode.EveryChange);
 </details>
 
 </details>
-<details><summary><b>Reactive upper & lower bounds</b></summary>
+<details><summary><b>4. Reactive upper & lower bounds</b></summary>
+<br>
 Changes in the upper bound and lower bound will propagate to the stat and cause it to be marked dirty.
 
 ```csharp
@@ -73,7 +80,8 @@ Stat currentHealth = new Stat(500f).SetLowerBound().SetUpperBound(maxHealth);
 </details>
 
 </details>
-<details><summary><b>Stat collections with custom enum keys</b></summary>
+<details><summary><b>5. Stat collections with custom enum keys</b></summary>
+<br>
 Easily manage stat creation and access with StatContainer.
 
 ```csharp
