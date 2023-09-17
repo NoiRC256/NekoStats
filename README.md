@@ -1,34 +1,13 @@
 # Overview
-NekoStats is a lightweight reactive stat system for Unity. It provides the building blocks for character stats, perks, buffs & debuffs, all that good stuff you might see in stats-heavy games such as rogue-likes and RPGs.
-
+NekoStats is a lightweight reactive stat system for Unity. It provides the building blocks for character stats, perks, buffs & debuffs, all that stat-related logic you might see in data-heavy genres such as rogue-likes and RPGs.
 ## Key Features
 
 (Click to expand each section)
 
 </details>
-<details><summary><b>1. Lightweight observable stats</b></summary>
+<details><summary><b>Flexible value modification</b></summary>
 <br>
-Listen to ValueChanged event to observe value. Listen to StatChanged event to observe stat instance.
-
-```csharp
-void OnEnable() {
-    _character.Health.StatChanged += HandleHealthChanged;
-}
-
-void OnDisable() {
-    _character.Health.StatChanged -= HandleHealthChanged;
-}
-
-void HandleHealthChanged(Stat stat) {
-    Debug.Log("Character health has changed: " + stat.Value);
-}
-```
-</details>
-
-</details>
-<details><summary><b>2. Non-destructive value modification</b></summary>
-<br>
-Each stat instance maintains its own collection of modifiers.
+Each stat instance maintains its own collection of modifiers for non-destructive value modification.
 
 ```csharp
 Stat speed = new Stat(10f);
@@ -51,7 +30,30 @@ Assert.AreEqual(speed.Value, 12f);
 </details>
 
 </details>
-<details><summary><b>3. Optimized lazy calculation</b></summary>
+<details><summary><b>Listen for changes</b></summary>
+<br>
+You can easily subcribe to value change events on a stat to avoid polling for changes every frame.
+
+- Subscribe to `ValueChanged` event to observe value
+- Subscribe to `StatChanged` event to observe stat instance
+
+```csharp
+void OnEnable() {
+    _character.Health.StatChanged += HandleHealthChanged;
+}
+
+void OnDisable() {
+    _character.Health.StatChanged -= HandleHealthChanged;
+}
+
+void HandleHealthChanged(Stat stat) {
+    Debug.Log("Character health has changed: " + stat.Value);
+}
+```
+</details>
+
+</details>
+<details><summary><b>Optimized value caching</b></summary>
 <br>
 If a stat is marked dirty, its final value will be re-calculated upon next access, then cached until marked dirty again.
 
@@ -66,8 +68,10 @@ Stat stat2 = new Stat().SetObserveMode(StatObserveMode.EveryChange);
 </details>
 
 </details>
-<details><summary><b>4. Reactive upper & lower bounds</b></summary>
+<details><summary><b>Upper & lower bounds</b></summary>
 <br>
+Enable upper or lower bounds for a stat.
+
 Changes in a stat's upper bound and lower bound will propagate to the stat and cause it to be marked dirty.
 
 ```csharp
@@ -87,9 +91,9 @@ Assert.AreEqual(currentHealth.Value, 450f);
 </details>
 
 </details>
-<details><summary><b>5. Stat collections with custom enum keys</b></summary>
+<details><summary><b>Easily create and access stats</b></summary>
 <br>
-Easily manage stat creation and access with StatContainer.
+Manage stat creation with StatContainer. Access stats efficiently through custom enum keys.
 
 ```csharp
     public enum AvatarStatType
