@@ -4,21 +4,19 @@ using UnityEngine;
 namespace NekoLib.ReactiveProps
 {
     /// <summary>
-    /// Wrapper class that holds a value and exposes an event for value change.
+    /// Data class that holds a value and exposes events for value change.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [System.Serializable]
     public class BindableProp<T> : IBindableProp<T> where T : struct
     {
-        [SerializeField] protected T _value;
-
         public virtual T Value {
             get => _value;
             set {
                 if (!_value.Equals(value))
                 {
                     _value = value;
-                    OnValueChanged();
+                    OnValueChange();
                 }
             }
         }
@@ -27,6 +25,8 @@ namespace NekoLib.ReactiveProps
         /// When the value has changed.
         /// </summary>
         public event Action<T> ValueChanged;
+
+        [SerializeField] protected T _value;
 
         public BindableProp()
         {
@@ -38,7 +38,7 @@ namespace NekoLib.ReactiveProps
             _value = value;
         }
 
-        protected virtual void OnValueChanged()
+        protected virtual void OnValueChange()
         {
             ValueChanged?.Invoke(Value);
         }

@@ -95,6 +95,8 @@ namespace NekoLib.Stats
         }
         public bool HasUpperBound => _hasUpperBound;
         public bool HasLowerBound => _hasLowerBound;
+        public BindableProp<float> UpperBound => _upperBound;
+        public BindableProp<float> LowerBound => _lowerBound;
 
         #endregion
 
@@ -319,7 +321,7 @@ namespace NekoLib.Stats
                 // If marked dirty for re-calculation, invoke value change events.
                 if (_broadcastChangeThisTick)
                 {
-                    OnValueChanged();
+                    OnValueChange();
                 }
                 _broadcastChangeThisTick = false;
             }
@@ -337,10 +339,10 @@ namespace NekoLib.Stats
             return this;
         }
 
-        protected override void OnValueChanged()
+        protected override void OnValueChange()
         {
             if (!_enableBroadcast) return;
-            base.OnValueChanged();
+            base.OnValueChange();
             StatChanged?.Invoke(this);
         }
 
@@ -360,7 +362,7 @@ namespace NekoLib.Stats
                     _broadcastChangeThisTick = true;
                     break;
                 case StatObserveMode.EveryChange:
-                    OnValueChanged();
+                    OnValueChange();
                     break;
             }
         }
