@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using NekoLib.ReactiveProps;
+using NekoLab.ReactiveProps;
 using UnityEngine;
 
-namespace NekoLib.Stats
+namespace NekoLab.Stats
 {
     public enum StatObserveMode
     {

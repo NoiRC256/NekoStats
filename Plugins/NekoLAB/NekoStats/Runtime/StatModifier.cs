@@ -1,4 +1,4 @@
-namespace NekoLib.Stats
+namespace NekoLab.Stats
 {
     public enum StatModifierEffect
     {

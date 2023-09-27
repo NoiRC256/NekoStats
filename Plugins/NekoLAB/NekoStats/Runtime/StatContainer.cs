@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using NekoLib.ReactiveProps;
+using NekoLab.ReactiveProps;
 
-namespace NekoLib.Stats
+namespace NekoLab.Stats
 {
     /// <summary>
     /// A container for stats.
@@ -18,7 +18,7 @@ namespace NekoLib.Stats
         [System.Serializable]
         protected struct StatWrapper
         {
-            [NekoLib.Stats.DisplayOnly] public E Name;
+            [NekoLab.Stats.DisplayOnly] public E Name;
             public Stat Stat;
             public bool Tick;
             public StatWrapper(E name, Stat stat, bool tick)

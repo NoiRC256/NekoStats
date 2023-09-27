@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace NekoLib.Stats
+namespace NekoLab.Stats
 {
     public class DisplayOnlyAttribute : PropertyAttribute
     {
