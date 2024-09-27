@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using NekoLab.ReactiveProps;
+using CC.Reactive;
 
-namespace NekoLab.Stats
+namespace CC.Stats
 {
     /// <summary>
     /// A container for stats.
@@ -18,7 +18,7 @@ namespace NekoLab.Stats
         [System.Serializable]
         protected struct StatWrapper
         {
-            [NekoLab.Stats.DisplayOnly] public E Name;
+            [CC.Stats.DisplayOnly] public E Name;
             public Stat Stat;
             public bool Tick;
             public StatWrapper(E name, Stat stat, bool tick)
@@ -96,7 +96,7 @@ namespace NekoLab.Stats
         /// <param name="upperBound"></param>
         /// <param name="lowerBound"></param>
         /// <returns></returns>
-        public virtual Stat RegisterStat(E statType, float value, bool tick = true)
+        public virtual Stat Create(E statType, float value, bool tick = true)
         {
             Stat stat;
             if (TryGet(statType, out stat) == false)
@@ -107,7 +107,7 @@ namespace NekoLab.Stats
             }
             else
             {
-                stat.BaseValue = value;
+                stat.ValueBase = value;
                 stat.InitialValue = value;
             }
             return stat;
@@ -124,9 +124,9 @@ namespace NekoLab.Stats
         /// <param name="upperBoundStatType"></param>
         /// <param name="tick"></param>
         /// <returns></returns>
-        public virtual Stat RegisterResourceStat(E statType, float value, E upperBoundStatType, bool tick = true)
+        public virtual Stat Create(E statType, float value, E upperBoundStatType, bool tick = true)
         {
-            Stat stat = RegisterStat(statType, value, tick);
+            Stat stat = Create(statType, value, tick);
             if (statType.Equals(upperBoundStatType))
             {
                 Debug.LogError("Cannot assign a stat as its own upper bound.");

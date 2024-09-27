@@ -1,33 +1,27 @@
 using System;
 using System.Collections.Generic;
-using NekoLab.ReactiveProps;
+using CC.Reactive;
 using UnityEngine;
 
-namespace NekoLab.Stats
+namespace CC.Stats
 {
-    public enum StatObserveMode
-    {
-        EveryTick = 0,
-        EveryChange = 1,
-    }
-
     /// <summary>
     /// A class representing a stat value. Maintains a collection of modifiers
     /// which contribute to the final value.
     /// <para>The final value is lazily re-calculated on access.</para>
-    /// <para>Listen to <see cref="BindableProp{T}.ValueChanged"/> to observe final value.</para>
-    /// <para>Listen to <see cref="StatChanged"/> to observe stat instance.</para>
     /// </summary>
-    [System.Serializable]
-    public class Stat : BindableProp<float>
+    [Serializable]
+    public class Stat : BindableProp<float, Stat>
     {
+        #region Variables
+
         #region Inspector Fields
 
         // Values.
         [Tooltip("Base value of the stat.")]
-        [SerializeField] protected float _baseValue = 0f;
-        [SerializeField] protected float _offsetValue = 0f;
-        [SerializeField] protected float _initialValue = 0f;
+        [SerializeField] protected float _valueBase = 0f;
+        [SerializeField] protected float _valueOffset = 0f;
+        [SerializeField] protected float _valueInitial = 0f;
 
         // Bounds.
         [Tooltip("If true, will limit the final value by an upper bound if present.")]
@@ -43,10 +37,7 @@ namespace NekoLab.Stats
         [SerializeField] protected List<StatModifier> _modifiers = new List<StatModifier>();
 
         // Value change monitoring.
-        [SerializeField] protected bool _enableBroadcast = true;
-        [SerializeField] protected StatObserveMode _observeMode = StatObserveMode.EveryTick;
         [SerializeField] protected bool _isDirty = true;
-        [SerializeField] protected bool _broadcastChangeThisTick = true;
 
         #endregion
 
@@ -59,29 +50,29 @@ namespace NekoLab.Stats
         /// </summary>
         public override float Value {
             get {
-                if (_isDirty) RefreshValue();
+                if (_isDirty) RecalculateValue();
                 return _value;
             }
             set {
-                _offsetValue += value - _value;
-                SetDirty();
+                _valueOffset += value - _value;
+                BroadcastValueChange();
             }
         }
         /// <summary>
         /// The base value of the stat.
         /// <para>Modifying this will mark the stat dirty for value re-calculation.</para>
         /// </summary>
-        public float BaseValue {
-            get => _baseValue;
+        public float ValueBase {
+            get => _valueBase;
             set {
-                if (value != _baseValue) SetDirty();
-                _baseValue = value;
+                if (value != _valueBase) BroadcastValueChange();
+                _valueBase = value;
             }
         }
 
         public float InitialValue {
-            get => _initialValue;
-            set => _initialValue = value;
+            get => _valueInitial;
+            set => _valueInitial = value;
         }
 
         /// <summary>
@@ -100,23 +91,14 @@ namespace NekoLab.Stats
 
         #endregion
 
-        #region Events
-
-        /// <summary>
-        /// When the stat has been marked dirty for value re-calculation.
-        /// The base value or final value may have changed,
-        /// or stat modifiers may have been added or removed.
-        /// </summary>
-        public event Action<Stat> StatChanged;
-
         #endregion
 
         public Stat() : this(0f) { }
 
         public Stat(float baseValue) : base(baseValue)
         {
-            _baseValue = baseValue;
-            _initialValue = baseValue;
+            _valueBase = baseValue;
+            _valueInitial = baseValue;
             _useUpperBound = false;
             _useLowerBound = false;
             _upperBound = null;
@@ -125,19 +107,25 @@ namespace NekoLab.Stats
             _hasLowerBound = false;
             _modifiers = new List<StatModifier>();
             _isDirty = true;
-            _broadcastChangeThisTick = true;
         }
 
-        #region Life cycle
+        #region API
+
+        public void Tick()
+        {
+
+        }
+
+        #region Life Cycle API
 
         /// <summary>
         /// Clear all variables.
         /// </summary>
         public void Clear()
         {
-            _offsetValue = 0f;
-            _baseValue = 0f;
-            _initialValue = 0f;
+            _valueOffset = 0f;
+            _valueBase = 0f;
+            _valueInitial = 0f;
             _useUpperBound = false;
             _useLowerBound = false;
             _upperBound = null;
@@ -146,8 +134,6 @@ namespace NekoLab.Stats
             _hasLowerBound = false;
             _modifiers.Clear();
             _isDirty = true;
-            _broadcastChangeThisTick = true;
-            StatChanged = null;
         }
 
         /// <summary>
@@ -156,15 +142,15 @@ namespace NekoLab.Stats
         /// <param name="clearModifiers"></param>
         public void Reset(bool clearModifiers = false)
         {
-            _offsetValue = 0f;
-            _baseValue = _initialValue;
+            _valueOffset = 0f;
+            _valueBase = _valueInitial;
             if (clearModifiers) _modifiers.Clear();
-            SetDirty();
+            BroadcastValueChange();
         }
 
         #endregion
 
-        #region Modifiers
+        #region Modifiers API
 
         /// <summary>
         /// Add a modifier to the stat.
@@ -174,7 +160,7 @@ namespace NekoLab.Stats
         public Stat AddModifier(StatModifier modifier)
         {
             _modifiers.Add(modifier);
-            SetDirty();
+            BroadcastValueChange();
             return this;
         }
 
@@ -186,21 +172,21 @@ namespace NekoLab.Stats
         public Stat RemoveModifier(StatModifier modifier)
         {
             _modifiers.Remove(modifier);
-            SetDirty();
+            BroadcastValueChange();
             return this;
         }
 
         #endregion
 
-        #region Bounds
+        #region Bounds API
 
-        public Stat UseUpperBound(bool toggle = true)
+        public Stat SetUseUpperBound(bool toggle = true)
         {
             _useUpperBound = toggle;
             return this;
         }
 
-        public Stat UseLowerBound(bool toggle = true)
+        public Stat SetUseLowerBound(bool toggle = true)
         {
             _useLowerBound = toggle;
             return this;
@@ -213,9 +199,9 @@ namespace NekoLab.Stats
         /// <returns></returns>
         public Stat SetUpperBound(BindableProp<float> bindableFloat, bool useUpperBound = true)
         {
-            if (_upperBound != null) _upperBound.ValueChanged -= HandleUpperBoundChanged;
+            if (_upperBound != null) _upperBound.OnValueChanged -= HandleUpperBoundChanged;
             _upperBound = bindableFloat;
-            _upperBound.ValueChanged += HandleUpperBoundChanged;
+            _upperBound.OnValueChanged += HandleUpperBoundChanged;
             _hasUpperBound = true;
             _useUpperBound = useUpperBound;
             return this;
@@ -226,7 +212,7 @@ namespace NekoLab.Stats
         /// </summary>
         /// <param name="upperBound"></param>
         /// <returns></returns>
-        public Stat SetUpperBound(float upperBound, bool useUpperBound = true) 
+        public Stat SetUpperBound(float upperBound, bool useUpperBound = true)
             => SetUpperBound(new BindableProp<float>(upperBound), useUpperBound);
 
         /// <summary>
@@ -234,7 +220,7 @@ namespace NekoLab.Stats
         /// </summary>
         public Stat RemoveUpperBound()
         {
-            if (_upperBound != null) _upperBound.ValueChanged -= HandleUpperBoundChanged;
+            if (_upperBound != null) _upperBound.OnValueChanged -= HandleUpperBoundChanged;
             _upperBound = null;
             _hasUpperBound = false;
             return this;
@@ -247,9 +233,9 @@ namespace NekoLab.Stats
         /// <returns></returns>
         public Stat SetLowerBound(BindableProp<float> bindableFloat, bool useLowerBound = true)
         {
-            if (_lowerBound != null) _lowerBound.ValueChanged -= HandleLowerBoundChanged;
+            if (_lowerBound != null) _lowerBound.OnValueChanged -= HandleLowerBoundChanged;
             _lowerBound = bindableFloat;
-            _lowerBound.ValueChanged += HandleLowerBoundChanged;
+            _lowerBound.OnValueChanged += HandleLowerBoundChanged;
             _hasLowerBound = true;
             _useLowerBound = useLowerBound;
             return this;
@@ -268,19 +254,31 @@ namespace NekoLab.Stats
         /// </summary>
         public Stat RemoveLowerBound()
         {
-            if (_lowerBound != null) _lowerBound.ValueChanged -= HandleLowerBoundChanged;
+            if (_lowerBound != null) _lowerBound.OnValueChanged -= HandleLowerBoundChanged;
             _lowerBound = null;
             _hasLowerBound = false;
             return this;
         }
 
-        private void HandleUpperBoundChanged(float value) { if (_useUpperBound) SetDirty(); }
-        private void HandleLowerBoundChanged(float value) { if (_useLowerBound) SetDirty(); }
+        #endregion
 
         #endregion
 
         #region Value Calculation
 
+        /// <summary>
+        /// Calculate and update the final value.
+        /// </summary>
+        protected void RecalculateValue()
+        {
+            _value = CalculateValue();
+            _isDirty = false;
+        }
+
+        /// <summary>
+        /// Calculate the final value.
+        /// </summary>
+        /// <returns></returns>
         protected float CalculateValue()
         {
             // Aggregate modifier values.
@@ -300,7 +298,7 @@ namespace NekoLab.Stats
             }
 
             // Calculate final value.
-            float finalValue = _baseValue + (_baseValue * multModifiersValue) + addModifiersValue + _offsetValue;
+            float finalValue = _valueBase + (_valueBase * multModifiersValue) + addModifiersValue + _valueOffset;
             if (_useUpperBound && _hasUpperBound && finalValue > _upperBound.Value) finalValue = _upperBound.Value;
             if (_useLowerBound && _hasLowerBound && finalValue < _lowerBound.Value) finalValue = _lowerBound.Value;
             return finalValue;
@@ -310,73 +308,24 @@ namespace NekoLab.Stats
 
         #region Value Change Broadcast
 
-        /// <summary>
-        /// Check and broadcast any value change since last tick.
-        /// <para>Call this at most once per frame for optimal performance.</para>
-        /// </summary>
-        public void Tick()
+        private void HandleUpperBoundChanged(BindableProp<float> bound)
         {
-            if (_enableBroadcast && _observeMode == StatObserveMode.EveryTick)
-            {
-                // If marked dirty for re-calculation, invoke value change events.
-                if (_broadcastChangeThisTick)
-                {
-                    OnValueChange();
-                }
-                _broadcastChangeThisTick = false;
-            }
+            if (_useUpperBound) BroadcastValueChange();
         }
 
-        public Stat EnableBroadcast(bool toggle = true)
+        private void HandleLowerBoundChanged(BindableProp<float> bound)
         {
-            _enableBroadcast = toggle;
-            return this;
+            if (_useLowerBound) BroadcastValueChange();
         }
 
-        public Stat SetObserveMode(StatObserveMode changeMonitorMode = StatObserveMode.EveryTick)
+        protected override void BroadcastValueChange()
         {
-            _observeMode = changeMonitorMode;
-            return this;
-        }
-
-        protected override void OnValueChange()
-        {
-            if (!_enableBroadcast) return;
-            base.OnValueChange();
-            StatChanged?.Invoke(this);
-        }
-
-        /// <summary>
-        /// Set the stat as dirty.
-        /// <para>If <see cref="_observeMode"/> is <see cref="StatObserveMode.EveryTick"/>,
-        /// will broadcast value change next time <see cref="Tick"/> is executed.</para>
-        /// <para>If <see cref="_observeMode"/> is <see cref="StatObserveMode.EveryChange"/>,
-        /// will broadcast value change right away.</para>
-        /// </summary>
-        protected void SetDirty()
-        {
+            // Next time any subscriber accesses the final value,
+            // it will be recalculated.
             _isDirty = true;
-            switch (_observeMode)
-            {
-                case StatObserveMode.EveryTick:
-                    _broadcastChangeThisTick = true;
-                    break;
-                case StatObserveMode.EveryChange:
-                    OnValueChange();
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Re-calculate the final value.
-        /// </summary>
-        protected void RefreshValue()
-        {
-            _value = CalculateValue();
-            _isDirty = false;
+            base.BroadcastValueChange();
         }
 
         #endregion
-
     }
 }
