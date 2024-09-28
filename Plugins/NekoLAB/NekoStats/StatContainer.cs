@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using CC.Reactive;
 
 namespace CC.Stats
 {
@@ -9,13 +9,13 @@ namespace CC.Stats
     /// Each stat is mapped to a unique enum value.
     /// </summary>
     /// <typeparam name="E"></typeparam>
-    [System.Serializable]
+    [Serializable]
     public class StatContainer<E> where E : System.Enum
     {
         /// <summary>
         /// Internal struct used to tick stats and for inspector display.
         /// </summary>
-        [System.Serializable]
+        [Serializable]
         protected struct StatWrapper
         {
             [CC.Stats.DisplayOnly] public E Name;
@@ -33,6 +33,17 @@ namespace CC.Stats
         [SerializeField] protected List<StatWrapper> _statList = new List<StatWrapper>();
 
         /// <summary>
+        /// Tick stats to enable change monitoring.
+        /// </summary>
+        public virtual void Tick()
+        {
+            for (int i = 0; i < _statList.Count; i++)
+            {
+                StatWrapper statWrapper = _statList[i];
+            }
+        }
+
+        /// <summary>
         /// Initialize stat collections.
         /// </summary>
         public virtual void Clear()
@@ -41,24 +52,8 @@ namespace CC.Stats
             _statList?.Clear();
         }
 
-        /// <summary>
-        /// Tick stats to enable change monitoring.
-        /// </summary>
-        public virtual void Tick()
+        public virtual void Reset()
         {
-            for (int i = 0; i < _statList.Count; i++)
-            {
-                StatWrapper statWrapper = _statList[i];
-                if (statWrapper.Tick) statWrapper.Stat.Tick();
-            }
-        }
-
-        public virtual void ResetStats()
-        {
-            foreach (Stat stat in _stats.Values)
-            {
-                stat.Reset();
-            }
         }
 
         /// <summary>
@@ -98,48 +93,16 @@ namespace CC.Stats
         /// <returns></returns>
         public virtual Stat Create(E statType, float value, bool tick = true)
         {
-            Stat stat;
-            if (TryGet(statType, out stat) == false)
+            Stat stat = null;
+            if (TryGet(statType, out stat))
             {
-                // Create new stat.
-                stat = new Stat(value);
-                AddStat(statType, stat, tick);
-            }
-            else
-            {
-                stat.ValueBase = value;
-                stat.InitialValue = value;
-            }
-            return stat;
-        }
-
-        /// <summary>
-        /// Register a resource stat.
-        /// <para>The upper bound is set to another stat corresponding the specified enum value.</para>
-        /// <para>The lower bound is set to 0.</para>
-        /// Make sure the upper bound stat is registered before this resource stat.
-        /// </summary>
-        /// <param name="statType"></param>
-        /// <param name="value"></param>
-        /// <param name="upperBoundStatType"></param>
-        /// <param name="tick"></param>
-        /// <returns></returns>
-        public virtual Stat Create(E statType, float value, E upperBoundStatType, bool tick = true)
-        {
-            Stat stat = Create(statType, value, tick);
-            if (statType.Equals(upperBoundStatType))
-            {
-                Debug.LogError("Cannot assign a stat as its own upper bound.");
                 return stat;
             }
-            if (TryGet(upperBoundStatType, out Stat upperBoundStat))
-            {
-                stat.SetUpperBound(upperBoundStat);
-            }
             else
             {
-                Debug.LogError("Upper bound stat not found wile registering resource stat." +
-                    "\nMake sure to register upper bound stat before registering the resource stat.");
+                // Create new stat.
+                stat = new Stat(new Stat(value));
+                AddStat(statType, stat, tick);
             }
             return stat;
         }

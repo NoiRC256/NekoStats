@@ -1,51 +1,42 @@
+using CC.Stats;
 using System;
 using UnityEngine;
 
 namespace CC.Reactive
 {
-    [Serializable]
-    public class BindableProp<TData> : BindableProp<TData, BindableProp<TData>>
-        where TData : struct
+    public interface IBindableProp<TData> where TData : struct, IEquatable<TData>
     {
-        public BindableProp() :base() { }
-        public BindableProp(TData value) : base(value) { }
+        public TData Value { get; }
+        public event Action<TData> OnValueChanged;
     }
 
-    public abstract class BindableProp<TData, TSelf>
-        where TData : struct
-        where TSelf : BindableProp<TData, TSelf>
+    [Serializable]
+    public class BindableFloat: IBindableProp<float>
     {
-        [SerializeField] protected TData _value;
+        [SerializeField] private float _value;
 
-        public virtual TData Value {
+        public virtual float Value {
             get => _value;
             set {
-                if (!_value.Equals(value))
+                if(value != _value)
                 {
                     _value = value;
-                    BroadcastValueChange();
+                    BroadcastValueChange(); 
                 }
             }
         }
 
-        /// <summary>
-        /// When the value has changed.
-        /// </summary>
-        public event Action<TSelf> OnValueChanged = delegate { };
+        public event Action<float> OnValueChanged = null;
 
-        public BindableProp()
+        public BindableFloat(float value)
         {
-
-        }
-
-        public BindableProp(TData value)
-        {
-            _value = value;
+            OnValueChanged = delegate { };
+            Value = value;
         }
 
         protected virtual void BroadcastValueChange()
         {
-            OnValueChanged.Invoke((TSelf)this);
+            OnValueChanged.Invoke(_value);
         }
     }
 }
