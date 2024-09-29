@@ -10,31 +10,53 @@ namespace CC.Stats
     /// <para>The final value is lazily re-calculated on access.</para>
     /// </summary>
     [Serializable]
-    public class Stat : BindableFloatRelay
+    public class Stat
     {
-        private bool _isDirty = false;
-        private List<BindableFloatRelay> _modifiers = new List<BindableFloatRelay>();
-
-        public Stat(float value) : base(value)
-        {
-            _dependency = new BindableFloat(value);
+        /// <summary>
+        /// Final value of the stat, calculated by base value + modifers.
+        /// <para>Re-calculates the value if the stat has been marked dirty.</para>
+        /// </summary>
+        public float Value {
+            get {
+                if (_isDirty)
+                {
+                    _value = CalculateValue();
+                    _isDirty = false;
+                }
+                return _value;
+            }
         }
 
-        public Stat(BindableFloat dependency) : base(0f)
+        private float _value = 0f;
+        private bool _isDirty = false;
+        private BindableFloat _baseValue;
+        private List<BindableFloat> _modifiers = new List<BindableFloat>();
+
+        public Stat(float value)
         {
-            _dependency = dependency;
-            Value = dependency.Value;
+            _baseValue = new BindableFloat(value);
+            _baseValue.OnValueChanged += HandleBaseValueChange;
         }
 
         #region API
 
-        public void Update()
+        public void AddModifier(Modifier modifier)
         {
-            if(_isDirty)
+            if (ReferenceEquals(modifier.BaseValue, this))
             {
-                RefreshValue();
-                _isDirty = false;
+                return;
             }
+            _modifiers.Add(modifier);
+            modifier.OnValueChanged += HandleModifierValueChange;
+            SetDirty();
+        }
+
+        public void RemoveModifier(Modifier modifier)
+        {
+            bool removed = _modifiers.Remove(modifier);
+            if (!removed) return;
+            modifier.OnValueChanged -= HandleModifierValueChange;
+            SetDirty();
         }
 
         public void SetDirty()
@@ -42,23 +64,9 @@ namespace CC.Stats
             _isDirty = true;
         }
 
-        public void AddModifier(StatModifier modifier)
-        {
-            _modifiers.Add(modifier);
-            modifier.OnValueChanged += HandleModifierValueChange;
-            SetDirty();
-        }
-
-        public void RemoveModifier(StatModifier modifier)
-        {
-            _modifiers.Remove(modifier);
-            modifier.OnValueChanged -= HandleModifierValueChange;
-            SetDirty();
-        }
-
         #endregion
 
-        protected override void HandleDependencyValueChange(float value)
+        protected void HandleBaseValueChange(float value)
         {
             SetDirty();
         }
@@ -68,22 +76,10 @@ namespace CC.Stats
             SetDirty();
         }
 
-        protected override void RefreshValue()
+        private float CalculateValue()
         {
-            if (_isDirty)
-            {
-                Value = CalculateValue();
-            }
-            else
-            {
-                SetDirty();
-            }
-        }
-
-        protected override float CalculateValue()
-        {
-            float value = _dependency.Value;
-            if (_modifiers.Count == 0) return value;
+            if (_modifiers.Count == 0) return _baseValue.Value;
+            float value = _baseValue.Value;
             for (int i = 0; i < _modifiers.Count; i++)
             {
                 value += _modifiers[i].Value;

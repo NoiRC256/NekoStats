@@ -101,7 +101,7 @@ namespace CC.Stats
             else
             {
                 // Create new stat.
-                stat = new Stat(new Stat(value));
+                stat = new Stat(0f);
                 AddStat(statType, stat, tick);
             }
             return stat;
