@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace CC.Reactive
+namespace CC.Stats
 {
     public interface IBindableProp<TData> where TData : struct, IEquatable<TData>
     {

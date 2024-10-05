@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using CC.Reactive;
 
 namespace CC.Stats
 {
@@ -27,15 +26,23 @@ namespace CC.Stats
             }
         }
 
+        public BindableFloat BaseValue => _baseValue;
+
         private float _value = 0f;
         private bool _isDirty = false;
         private BindableFloat _baseValue;
         private List<BindableFloat> _modifiers = new List<BindableFloat>();
 
-        public Stat(float value)
+        public Stat(float value) : this(new BindableFloat(value))
         {
-            _baseValue = new BindableFloat(value);
+
+        }
+
+        public Stat(BindableFloat baseValue)
+        {
+            _baseValue = baseValue;
             _baseValue.OnValueChanged += HandleBaseValueChange;
+            SetDirty();
         }
 
         #region API
@@ -57,6 +64,11 @@ namespace CC.Stats
             if (!removed) return;
             modifier.OnValueChanged -= HandleModifierValueChange;
             SetDirty();
+        }
+
+        public void SetBaseValue(float value)
+        {
+            _baseValue.Value = value;
         }
 
         public void SetDirty()
