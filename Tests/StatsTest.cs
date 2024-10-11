@@ -11,7 +11,7 @@ public class StatsTest
     {
         Stat healthMax = new Stat(100f);
         Modifier flatMod = new Modifier(25f);
-        Modifier percMod = new PercentModifier(0.1f, healthMax.BaseValue);
+        Modifier percMod = new PercentModifier(0.1f, healthMax.Base);
 
         // Add flat and percent modifiers.
         healthMax.AddModifier(flatMod);
@@ -32,7 +32,7 @@ public class StatsTest
     {
         Stat healthMax = new Stat(100f);
         Stat shieldMax = new Stat(500f);
-        Modifier mod = new PercentModifier(0.1f, healthMax.BaseValue);
+        Modifier mod = new PercentModifier(0.1f, healthMax.Base);
         shieldMax.AddModifier(mod);
         Assert.That(healthMax.Value, Is.EqualTo(100f));
         Assert.That(shieldMax.Value, Is.EqualTo(500f + (100f * 0.1f)));
@@ -46,8 +46,8 @@ public class StatsTest
     {
         Stat shieldMax = new Stat(500f);
         Stat attack = new Stat(60f);
-        Modifier percent = new PercentModifier(0.001f, shieldMax.BaseValue);
-        Modifier mod = new PercentModifier(percent.Value, attack.BaseValue);
+        Modifier percent = new PercentModifier(0.001f, shieldMax.Base);
+        Modifier mod = new PercentModifier(percent.Value, attack.Base);
         attack.AddModifier(mod);
         // Max shield is 500, 0.1% of that is 0.5 = 50%, so attack should increse by 50%.
         Assert.That(shieldMax.Value, Is.EqualTo(500f));
@@ -78,11 +78,11 @@ public class StatsTest
     {
         Stat attack = new Stat(60f);
         Stat defence = new Stat(50f);
-        Modifier mod = new PercentModifier(0.1f, attack.BaseValue);
+        Modifier mod = new PercentModifier(0.1f, attack.Base);
         defence.AddModifier(mod);
         Assert.That(attack.Value, Is.EqualTo(60f));
         Assert.That(defence.Value, Is.EqualTo(56f));
-        attack.SetBaseValue(70f);
+        attack.Base.Value = 70f;
         Assert.That(attack.Value, Is.EqualTo(70f));
         Assert.That(defence.Value, Is.EqualTo(57f));
     }

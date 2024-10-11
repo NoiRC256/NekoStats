@@ -1,5 +1,7 @@
+using PlasticGui.WorkspaceWindow.IssueTrackers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace CC.Stats
 {
@@ -26,49 +28,56 @@ namespace CC.Stats
             }
         }
 
-        public BindableFloat BaseValue => _baseValue;
+        public BindableFloat Base => _base;
 
         private float _value = 0f;
         private bool _isDirty = false;
-        private BindableFloat _baseValue;
-        private List<BindableFloat> _modifiers = new List<BindableFloat>();
+        private BindableFloat _base;
+        private List<Modifier> _mods = new List<Modifier>();
 
         public Stat(float value) : this(new BindableFloat(value))
         {
 
         }
 
-        public Stat(BindableFloat baseValue)
+        public Stat(BindableFloat @base)
         {
-            _baseValue = baseValue;
-            _baseValue.OnValueChanged += HandleBaseValueChange;
+            _base = @base;
+            _base.OnValueChanged += HandleBaseValueChange;
             SetDirty();
         }
 
         #region API
 
-        public void AddModifier(Modifier modifier)
+        public void AddModifier(Modifier mod)
         {
-            if (ReferenceEquals(modifier.BaseValue, this))
+            if (ReferenceEquals(mod.Base, this))
             {
-                return;
+                throw new Exception("Cannot add modifier - Circular base value dependency.");
             }
-            _modifiers.Add(modifier);
-            modifier.OnValueChanged += HandleModifierValueChange;
+            _mods.Add(mod);
+            mod.Activate();
+            mod.OnValueChanged += HandleModifierValueChange;
             SetDirty();
         }
 
-        public void RemoveModifier(Modifier modifier)
+        public void RemoveModifier(Modifier mod)
         {
-            bool removed = _modifiers.Remove(modifier);
-            if (!removed) return;
-            modifier.OnValueChanged -= HandleModifierValueChange;
+            mod.Deactivate();
+            mod.OnValueChanged -= HandleModifierValueChange;
             SetDirty();
         }
 
-        public void SetBaseValue(float value)
+        public void RemoveAllModifiers()
         {
-            _baseValue.Value = value;
+            for(int i = _mods.Count - 1; i >= 0; i--)
+            {
+                var mod = _mods[i];
+                mod.OnValueChanged -= HandleModifierValueChange;
+                mod.Deactivate();
+            }
+            _mods.Clear();
+            SetDirty();
         }
 
         public void SetDirty()
@@ -90,11 +99,17 @@ namespace CC.Stats
 
         private float CalculateValue()
         {
-            if (_modifiers.Count == 0) return _baseValue.Value;
-            float value = _baseValue.Value;
-            for (int i = 0; i < _modifiers.Count; i++)
+            if (_mods.Count == 0) return _base.Value;
+            float value = _base.Value;
+            for (int i = _mods.Count - 1; i >= 0; i--)
             {
-                value += _modifiers[i].Value;
+                var mod = _mods[i];
+                if (mod.IsActive == false)
+                {
+                    _mods.Remove(mod);
+                    continue;
+                }
+                value += _mods[i].Value;
             }
             return value;
         }
